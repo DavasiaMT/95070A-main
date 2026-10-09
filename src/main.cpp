@@ -1,0 +1,271 @@
+/*----------------------------------------------------------------------------*/
+/*                                                                            */
+/*    Module:       main.cpp                                                  */
+/*    Author:       katherinezeng                                             */
+/*    Created:      5/27/2025, 10:30:19 PM                                    */
+/*    Description:  V5 project                                                */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+
+#include "vex.h"
+#include "robot-config.h"
+#include "PID.h"
+#include "autons.h"
+#include "auton-selector.h"
+#include "lift.h"
+#include "util.h"
+#include "drive.h"
+#include "intake.h"
+
+using namespace vex;
+
+// A global instance of competition
+competition Competition;
+
+
+/*---------------------------------------------------------------------------*/
+/*                          Pre-Autonomous Functions                         */
+/*                                                                           */
+/*  You may want to perform some actions before the competition starts.      */
+/*  Do them in the following function.  You must return from this function   */
+/*  or the autonomous and usercontrol tasks will not be started.  This       */
+/*  function is only called once after the V5 has been powered on and        */
+/*  not every time that the robot is disabled.                               */
+/*---------------------------------------------------------------------------*/
+
+void pre_auton(void) {
+
+  // All activities that occur before the competition starts
+  // Example: clearing encoders, setting servo positions, ...
+
+
+  vexcodeInit();
+  autonSelector selector(1, 3);
+  selector.chooseAuton();
+  InertialSensor.calibrate();
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              Autonomous Task                              */
+/*                                                                           */
+/*  This task is used to control your robot during the autonomous phase of   */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*  You must modify the code to add your own robot specific commands here.   */
+/*---------------------------------------------------------------------------*/
+
+void autonomous(void) {
+  
+  switch (autonSelector::getSelectedAuton()) {
+
+    case 1:
+      rightAuton();
+      break;
+
+    case 2:
+      leftAuton();
+      break;
+
+    case 3:
+      skillsAuton();
+      break;
+
+    default:
+      Brain.Screen.print("No valid auton selected!");
+      break;
+  }
+
+
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              User Control Task                            */
+/*                                                                           */
+/*  This task is used to control your robot during the user control phase of */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*  You must modify the code to add your own robot specific commands here.   */
+/*---------------------------------------------------------------------------*/
+
+bool inauton = false;
+
+// Drivetrain functions in functions.cpp
+
+
+//Variables used in driver control
+double intakeSpeed = 0;
+bool buttonL1Held = false;
+bool buttonL2Held = false;
+
+bool buttonXHeld = false;
+
+// User control function
+void usercontrol(void) {
+
+  bool slowModeActive = false;
+  const double DRIVER_SPEED_FACTOR = 1.15; //can adjust your driver speed here
+
+
+  while (true) {
+    //asfd
+  
+    // ========== DRIVE CONTROL ========== //
+  double forwards = Controller.Axis3.position() * 0.95; // forward/backward, change multiplier for sensitivity
+    double turn = Controller.Axis1.position() * 0.80; // left/right
+
+    // Convert to voltage (+-12000 mV)
+    double leftVoltage = (forwards + turn) * 125;
+    double rightVoltage = (forwards - turn) * 125;
+
+    // limmit :D
+    if (leftVoltage > 12000)
+        leftVoltage = 12000;
+    if (leftVoltage < -12000)
+        leftVoltage = -12000;
+    if (rightVoltage > 12000)
+        rightVoltage = 12000;
+    if (rightVoltage < -12000)
+        rightVoltage = -12000;
+
+    //Drive motors (direction, side of dt, voltage units)
+    LF.spin(vex::forward, leftVoltage, voltageUnits::mV);
+    LB.spin(vex::forward, leftVoltage, voltageUnits::mV);
+    RF.spin(vex::forward, rightVoltage, voltageUnits::mV);
+    RB.spin(vex::forward, rightVoltage, voltageUnits::mV);
+  /*double left = Controller.Axis3.position();
+  double right = Controller.Axis2.position();
+  if(fabs(left) < 10 && fabs(right) < 10) {
+
+  LB.stop(coast);
+  LF.stop(coast);
+  RB.stop(coast);
+  RF.stop(coast);
+}
+
+else{
+  LB.spin(forward, left, percent); 
+  LF.spin(forward, left, percent);
+  RB.spin(forward, right, percent);
+  RF.spin(forward, right, percent);*/
+
+
+    // ========== Lift CONTROL ========== //
+    // Hold down the R1 and R2 buttons to use the lift //
+    if (Controller.ButtonR1.pressing()) {
+      Lift1.spin(reverse, 50, percent);
+      Lift2.spin(forward, 50, percent);
+    } 
+    else if (Controller.ButtonR2.pressing()) {
+      Lift1.spin(forward, 50, percent);
+      Lift2.spin(reverse, 50, percent);
+    } 
+    else {
+      Lift1.stop(hold);
+      Lift2.stop(hold);
+    }
+
+    /*if (Controller.ButtonL1.pressing()) {
+      toggle.spin(reverse, 100, percent);
+    } 
+    else if (Controller.ButtonL2.pressing()) {
+      toggle.spin(forward, 100, percent);
+    } 
+    else {
+      toggle.stop(hold);
+    }*/
+
+    
+    // ========== INTAKE ========== //
+    // Tap the L1 and L2 buttons to set the intake speed. Tap the same button again to stop //
+    /*if (Controller.ButtonL1.pressing() && intakeSpeed != 100 && !buttonL1Held) {
+      intakeMotor.spin(forward, 100, percent);
+      intakeSpeed = 100;
+      buttonL1Held = true;
+    } 
+    else if(Controller.ButtonL1.pressing() && intakeSpeed == 100 && !buttonL1Held) {
+      intakeMotor.stop(coast);
+      intakeSpeed = 0;
+      buttonL1Held = true;
+    }
+    else if (Controller.ButtonL2.pressing() && intakeSpeed != -100 && !buttonL2Held) {
+      intakeMotor.spin(reverse, 100, percent);
+      intakeSpeed = -100;
+      buttonL2Held = true;
+    } 
+    else if (Controller.ButtonL2.pressing() && intakeSpeed == -100 && !buttonL2Held){
+      intakeMotor.stop(coast);
+      intakeSpeed = 0;
+      buttonL2Held = true;
+    }
+
+    if(!Controller.ButtonL1.pressing()) {
+      buttonL1Held = false;
+    }
+    if(!Controller.ButtonL2.pressing()) {
+      buttonL2Held = false;
+    }
+ 
+    // ========== COLOR SENSOR ========== //
+    color detectedColor = OpticalSensor.color();
+
+    if (detectedColor == color::blue) {
+      Brain.Screen.printAt(50, 50, "Blue Detected!");
+    } 
+    
+    else if (detectedColor == color::red) {
+      Brain.Screen.printAt(50, 50, "Red Detected!");
+    } 
+    
+    else {
+      Brain.Screen.printAt(50, 50, "No specific color detected.");
+    }*/
+
+    double hue = OpticalSensor.hue();
+    double brightness = OpticalSensor.brightness();
+    Brain.Screen.printAt(50, 70, "Hue: %.2f", hue);
+    Brain.Screen.printAt(50, 90, "Brightness: %.2f", brightness);
+    Brain.Screen.clearScreen();
+
+    // ========== PNEUMATICS ========== //
+    // Use the X button to toggle the piston position //
+    if(Controller.ButtonL1.PRESSED) {
+      DoubleActingPiston.set(!DoubleActingPiston.value());
+      // Lift1.spin(reverse, 50,percent);
+      // Lift2.spin(forward, 50,percent);
+      // wait(90, msec);
+      // Lift1.stop();
+      // Lift2.stop();
+    }
+  
+    // ========== LOOP DELAY ========== //
+    wait(20, msec);
+  }
+}
+
+
+
+  
+
+// Entry point
+int main() {
+  Competition.autonomous(autonomous);
+  Competition.drivercontrol(usercontrol);
+
+  
+  pre_auton();
+  //Competition.test_auton();
+  //Competition.test_driver();
+
+
+  while (true) {
+    wait(100, msec);
+  }
+}
+
+
+
+
+
