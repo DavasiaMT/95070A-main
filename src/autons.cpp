@@ -53,8 +53,10 @@ void skillsAuton() {
   Chassis.driveDistance(7, 0.5, 6, 0.001, 0.05);
   Chassis.driveDistance(-15, 0.5, 3.1, 0.001, 0.05);
   Chassis.turnAngle (-135, 5, 0.8, 0.0001, 0.05);
+  Chassis.driveDistance(8,0.7,2.6,0.01,0.25);
+  DoubleActingPiston.set(false);
 
-  Chassis.driveStop();
+
   // Chassis.driveDistance (1,0.1,1,0.02,0.09);
 
 
