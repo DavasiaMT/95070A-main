@@ -251,6 +251,7 @@ else{
 
 // Entry point
 int main() {
+  InertialSensor.calibrate();
   Competition.autonomous(autonomous);
   Competition.drivercontrol(usercontrol);
 

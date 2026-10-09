@@ -48,7 +48,18 @@ drive Chassis(3.25, 3.0/4, 0, 0, 0, leftDrive, rightDrive, PORT11);
 }
 
 void skillsAuton() {
+    drive Chassis(3.25, 3.0/4, 0, 0, 0, leftDrive, rightDrive, PORT11);
+  Chassis.turnAngle(52, 3, 0.6, 0.001, 0.072);
+  Chassis.driveDistance(7, 0.5, 6, 0.001, 0.05);
+  Chassis.driveDistance(-15, 0.5, 3.1, 0.001, 0.05);
+  Chassis.turnAngle (-135, 5, 0.8, 0.0001, 0.05);
+
+  Chassis.driveStop();
+  // Chassis.driveDistance (1,0.1,1,0.02,0.09);
+
+
   
+
   //Use functions to create a programming skills routine
   
 }
